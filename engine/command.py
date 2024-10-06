@@ -1,7 +1,7 @@
 import pyttsx3
 import speech_recognition as sr
 
-def spaek(text):
+def speak(text):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('rate', 175)
@@ -25,6 +25,15 @@ def TakeCommand():
         print("Sorry,I did not catch that")
         return ""
     return query.lower()
-text=TakeCommand()
-if text:
-    spaek(text)
+# text=TakeCommand()
+# if text:
+#     spaek(text)
+
+def allCommands():
+    query = TakeCommand()
+
+    if "open" in query:
+        from engine.features import openCommand
+        openCommand(query)
+    else:
+        print("not run")
