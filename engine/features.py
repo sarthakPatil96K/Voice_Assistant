@@ -12,6 +12,7 @@ def openCommand(query):
     query=query.replace(Assistant_Name,"")
     query=query.replace("open","")
     query.lower()
+    print("Openning "+query)
 
     if query!="":
         speak("Openning "+query)
