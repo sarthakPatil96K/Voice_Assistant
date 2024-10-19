@@ -35,5 +35,8 @@ def allCommands():
     if "open" in query:
         from engine.features import openCommand
         openCommand(query)
+    elif "play" in query and "youtube" in query:
+        from engine.features import PlayYoutube
+        PlayYoutube(query)
     else:
         print("not run")
