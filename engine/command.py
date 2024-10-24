@@ -38,5 +38,8 @@ def allCommands():
     elif "play" in query and "youtube" in query:
         from engine.features import PlayYoutube
         PlayYoutube(query)
+    elif "search" in query and "wikipedia" in query:
+        from engine.features import search_wikipedia
+        search_wikipedia(query)
     else:
-        print("not run")
+        speak("Execution failded please speak again!! ")

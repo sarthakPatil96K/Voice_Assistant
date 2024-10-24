@@ -1,5 +1,6 @@
 import os
 import re
+import wikipedia as wk
 from playsound import playsound
 from engine.config import Assistant_Name
 from engine.command import speak
@@ -35,8 +36,25 @@ def PlayYoutube(query):
 def extract_yt_term(command):
     # Define a regular expression pattern to capture the song name
     pattern = r'play\s+(.*?)\s+on\s+youtube'
-    # Use re.search to find the match in the command
+     
     match = re.search(pattern, command, re.IGNORECASE)
-    # If a match is found, return the extracted song name; otherwise, return None
+     
     return match.group(1) if match else None
 
+def search_wikipedia(query):
+    try:
+        search_term = extract_wk_term(query)
+        print(f"Searching Wikipedia for: {search_term}")
+        result = wk.summary(search_term, sentences=3)  # Fetches the first 3 sentences of the search result
+        print(result)   
+        speak(result)   
+    except Exception as e:
+        speak(f"An error occurred: {e}")
+
+def extract_wk_term(command):
+     
+    pattern = r'search\s+(.*?)\s+on\s+wikipedia'
+     
+    match = re.search(pattern, command, re.IGNORECASE)
+     
+    return match.group(1) if match else None
