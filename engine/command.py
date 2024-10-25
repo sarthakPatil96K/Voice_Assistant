@@ -41,5 +41,8 @@ def allCommands():
     elif "search" in query and "wikipedia" in query:
         from engine.features import search_wikipedia
         search_wikipedia(query)
+    elif "search" in query:
+        from engine.features import search_google
+        search_google(query)
     else:
-        speak("Execution failded please speak again!! ")
+        speak("Execution failed please speak again!! ")

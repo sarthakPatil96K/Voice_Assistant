@@ -54,7 +54,20 @@ def search_wikipedia(query):
 def extract_wk_term(command):
      
     pattern = r'search\s+(.*?)\s+on\s+wikipedia'
-     
     match = re.search(pattern, command, re.IGNORECASE)
-     
     return match.group(1) if match else None
+
+ 
+def search_google(query):
+    search_term = extract_google_term(query)
+    print(f"Searching Google for: {search_term}")
+    speak(f"Searching Google for {search_term}")
+    kit.search(search_term)  # This will open the search in a browser
+
+def extract_google_term(command):
+    # Extract search term from command using regex
+    pattern = r'search\s+(.*?)\s+on\s+google'
+    match = re.search(pattern, command, re.IGNORECASE)
+    return match.group(1) if match else None
+
+ 
