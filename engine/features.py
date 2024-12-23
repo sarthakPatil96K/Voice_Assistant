@@ -4,10 +4,11 @@ import wikipedia as wk
 from playsound import playsound
 from engine.config import Assistant_Name
 from engine.command import speak
-
+import eel
 import pywhatkit as kit
 
 # voice assistant opening sound function
+@eel.expose
 def playAssitantSound():
     music_dir="www\\assets\\audio\mixkit-software-interface-back-2575.wav"
     playsound(music_dir)
