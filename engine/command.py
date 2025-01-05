@@ -1,5 +1,6 @@
 import pyttsx3
 import speech_recognition as sr
+import eel
 
 def speak(text):
     engine = pyttsx3.init()
@@ -8,19 +9,25 @@ def speak(text):
     engine.setProperty('voice', voices[1].id)
     engine.say(text)
     engine.runAndWait()
+    eel.ShowHood()
 
+
+@eel.expose
 def TakeCommand():
     r=sr.Recognizer()
     with sr.Microphone() as source:
         print("Listening...")
+        eel.DisplayMessage("Listening...")
         r.pause_threshold=1
         r.adjust_for_ambient_noise(source)
 
         audio=r.listen(source,10,6)
     try :
         print("Recognizing...")
+        eel.DisplayMessage("Recognizing...")
         query=r.recognize_google(audio,language='en-in')
         print(f"User said:{query}")
+        eel.DisplayMessage(f"User said:{query}")
     except Exception as e:
         print("Sorry,I did not catch that")
         return ""
@@ -28,7 +35,7 @@ def TakeCommand():
 # text=TakeCommand()
 # if text:
 #     spaek(text)
-
+@eel.expose
 def allCommands():
     query = TakeCommand()
 

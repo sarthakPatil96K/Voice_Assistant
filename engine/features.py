@@ -1,11 +1,16 @@
 import os
 import re
 import wikipedia as wk
+import webbrowser
 from playsound import playsound
 from engine.config import Assistant_Name
 from engine.command import speak
 import eel
 import pywhatkit as kit
+
+import sqlite3
+conn = sqlite3.connect("Eleven.db")
+cursor = conn.cursor()
 
 # voice assistant opening sound function
 @eel.expose
@@ -18,16 +23,47 @@ def openCommand(query):
     query=query.replace("open","")
     query.lower()
     print("Openning "+query)
+    app_name = query.strip()
 
-    if query!="":
-            speak("Openning "+query)
-            query=query.replace("powerpoint","powerpnt")
-            query=query.replace("whatsapp","whatsapp:")
-            query=query.replace("word","winword")
-            os.system("start "+query)
-        
-    else:
-        speak("Not found")
+    if app_name !='':
+        try:
+            cursor.execute(
+                'SELECT path FROM sys_commands WHERE name IN (?)',(app_name,)
+            )
+            results = cursor.fetchall()
+
+            if len(results) !=0:
+                speak("Opening "+query)
+                os.startfile(results[0][0])
+
+            elif len(results) == 0:
+                cursor.execute(
+                    'SELECT url FROM web_commands WHERE name IN (?)',(app_name,)
+                )
+                results = cursor.fetchall()
+
+                if len(results) !=0:
+                    speak("Opening "+ query)
+                    webbrowser.open(results[0][0])
+
+                else:
+                    speak("Openning "+query)
+
+                    try:
+                        query=query.replace("powerpoint","powerpnt")
+                        query=query.replace("whatsapp","whatsapp:")
+                        query=query.replace("word","winword")
+                        os.system("start "+query)
+
+                    except:
+                        speak("Not found")
+
+        except:
+            speak("Something went wrong")
+
+
+
+     
 
 def PlayYoutube(query):
     search_term=extract_yt_term(query)
