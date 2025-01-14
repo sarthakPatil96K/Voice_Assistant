@@ -3,10 +3,12 @@ import speech_recognition as sr
 import eel
 
 def speak(text):
+    text = str(text)
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('rate', 175)
     engine.setProperty('voice', voices[1].id)
+    eel.DisplayMessage(f"User said:{text}")
     engine.say(text)
     engine.runAndWait()
     eel.ShowHood()
@@ -51,5 +53,11 @@ def allCommands():
     elif "search" in query:
         from engine.features import search_google
         search_google(query)
+    elif "temperature" in query:
+        from engine.features import weather
+        weather(query)
+   
     else:
-        speak("Execution failed please speak again!! ")
+        from engine.features import chatBot
+        response= chatBot(query)
+        

@@ -9,6 +9,7 @@ import eel
 import pywhatkit as kit
 
 import sqlite3
+from hugchat import hugchat
 conn = sqlite3.connect("Eleven.db")
 cursor = conn.cursor()
 
@@ -106,5 +107,70 @@ def extract_google_term(command):
     pattern = r'search\s+(.*?)\s+on\s+google'
     match = re.search(pattern, command, re.IGNORECASE)
     return match.group(1) if match else None
+
+ 
+# chatBot using open source library
+def chatBot(query):
+    user_input = query.lower()
+    chatbot = hugchat.ChatBot(cookie_path="engine\cookies.jason")
+    id = chatbot.new_conversation()
+    chatbot.change_conversation(id)
+    response =  chatbot.chat(user_input)
+    print(response)
+    speak(response)
+    return response
+
+# weather API
+def weather(query):
+    text = extract_city_from_query(query)
+    import requests,json
+    api_key = "e18c82c4cf1a4f6864b3bf11bd6e6121"
+    url = "https://api.openweathermap.org/data/2.5/weather?q="
+    cmpl_url = url + text+ "&appid=" +api_key
+    response = requests.get(cmpl_url)
+    response = response.json()
+    understandable_lang = format_weather_data(response)
+    speak(understandable_lang)
+    return response
+
+# extract city name
+def extract_city_from_query(query):
+     
+    # Common pattern for city names (basic implementation)
+    # Adjust this to match your requirements or use a predefined list of cities for better accuracy.
+    pattern = r"temperature in ([A-Za-z\s]+)"
+    
+    match = re.search(pattern, query, re.IGNORECASE)
+    if match:
+        # Return the city name, stripping any extra whitespace
+        return match.group(1).strip()
+    return None
+
+def format_weather_data(api_response):
+     
+    # Extract required fields from the response
+    temperature_kelvin = api_response.get("main", {}).get("temp")
+    pressure = api_response.get("main", {}).get("pressure")
+    humidity = api_response.get("main", {}).get("humidity")
+    temp_min_kelvin = api_response.get("main", {}).get("temp_min")
+    temp_max_kelvin = api_response.get("main", {}).get("temp_max")
+
+    # Convert temperatures from Kelvin to Celsius
+    temperature_celsius = temperature_kelvin - 273.15 if temperature_kelvin else None
+    temp_min_celsius = temp_min_kelvin - 273.15 if temp_min_kelvin else None
+    temp_max_celsius = temp_max_kelvin - 273.15 if temp_max_kelvin else None
+
+    # Format the output
+    output = []
+    if temperature_celsius is not None:
+        output.append(f"Current Temperature: {temperature_celsius:.2f}°C ")
+    if temp_min_celsius is not None and temp_max_celsius is not None:
+        output.append(f"Temperature Range: {temp_min_celsius:.2f}°C to {temp_max_celsius:.2f}°C ")
+    if pressure is not None:
+        output.append(f"Pressure: {pressure} hPa ")
+    if humidity is not None:
+        output.append(f"Humidity: {humidity}%")
+
+    return "\n".join(output) if output else "Weather data not available."
 
  
