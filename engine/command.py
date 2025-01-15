@@ -56,7 +56,9 @@ def allCommands():
     elif "temperature" in query:
         from engine.features import weather
         weather(query)
-   
+    elif "news" in query:
+        from engine.features import news
+        news()
     else:
         from engine.features import chatBot
         response= chatBot(query)

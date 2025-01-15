@@ -173,4 +173,29 @@ def format_weather_data(api_response):
 
     return "\n".join(output) if output else "Weather data not available."
 
+# News API
+
+def news():
+    import requests
+    url = "http://api.mediastack.com/v1/news?access_key=a40867165592e001d48e80ed52bc9ec1&countries=in"
+    response = requests.get(url)
+    response = response.json()
+    speak_response = format_news_for_voice_assistant(response["data"][0])
+    speak(speak_response)
+    return speak_response
+
+  
+def format_news_for_voice_assistant(news_json):
+    # Extracting the relevant information from the news API response
+    title = news_json.get("title", "No title available")
+    description = news_json.get("description", "No description available")
+    source = news_json.get("source", "Unknown source")
+    published_at = news_json.get("published_at", "No publish date available")
+    url = news_json.get("url", "No URL available")
+
+    # Formatting the information for voice assistant
+    speakable_text = f"Here's a news update: {title}. {description}  Source: {source}."
+    
+    return speakable_text
+
  
