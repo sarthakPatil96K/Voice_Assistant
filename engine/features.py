@@ -97,16 +97,52 @@ def extract_wk_term(command):
 
  
 def search_google(query):
+    """
+    Searches for a term on Google based on the user's query.
+    
+    Args:
+        query (str): The user's input query.
+    """
     search_term = extract_google_term(query)
-    print(f"Searching Google for: {search_term}")
-    speak(f"Searching Google for {search_term}")
-    kit.search(search_term)  # This will open the search in a browser
+    
+    if search_term:
+        print(f"Searching Google for: {search_term}")
+        speak(f"Searching Google for {search_term}")
+        kit.search(search_term)  # This will open the search in a browser
+    else:
+        speak("I couldn't determine what to search for. Please try again with a clearer query.")
+
 
 def extract_google_term(command):
-    # Extract search term from command using regex
-    pattern = r'search\s+(.*?)\s+on\s+google'
-    match = re.search(pattern, command, re.IGNORECASE)
-    return match.group(1) if match else None
+    """
+    Extracts the search term from a user's query to search on Google.
+    
+    Args:
+        command (str): The user's input query.
+    
+    Returns:
+        str: The extracted search term or None if no term is found.
+    """
+    # Convert command to lowercase for consistent matching
+    command = command.lower()
+    
+    # Define patterns for common search queries
+    patterns = [
+        r"search\s+(.*?)\s+on\s+google",  # Example: "Search Python on Google"
+        r"google\s+(.*)",                # Example: "Google Python"
+        r"search\s+(.*)",                # Example: "Search Python"
+        r"look up\s+(.*?)\s+on\s+google" # Example: "Look up Python on Google"
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, command)
+        if match:
+            return match.group(1)  # Return the captured search term
+    
+    # Fallback: Extract remaining words after "search", "google", or "look up"
+    fallback_pattern = r"(?:search|google|look up)\s+(.*)"
+    fallback_match = re.search(fallback_pattern, command)
+    return fallback_match.group(1) if fallback_match else None
 
  
 # chatBot using open source library
@@ -198,4 +234,121 @@ def format_news_for_voice_assistant(news_json):
     
     return speakable_text
 
- 
+def dictionay_search(query):
+    """
+    Searches for a word in the dictionary API and speaks the response.
+    
+    Args:
+        query (str): The user's input query.
+    """
+    import requests
+
+    # Extract the word to search
+    word = extract_word_from_query(query)
+    
+    if not word:
+        speak("I couldn't extract a word to search. Please try rephrasing your query.")
+        return
+    
+    url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        response_data = response.json()
+        refined_response = process_dictionary_response_refined(response_data)
+        speak(refined_response)
+    else:
+        speak(f"Error: Unable to fetch data for the word '{word}'. Status code: {response.status_code}")
+
+
+def extract_word_from_query(query):
+    """
+    Extracts a word to search in the dictionary from a user's query.
+    
+    Args:
+        query (str): The user's input query.
+    
+    Returns:
+        str: The extracted word or None if no word is found.
+    """
+    import re
+
+    # Convert query to lowercase
+    query = query.lower()
+    
+    # Patterns for extracting the word
+    patterns = [
+        r"what does (\w+) mean",           # Example: "What does apple mean?"
+        r"meaning of (\w+)",               # Example: "Meaning of apple"
+        r"definition of (\w+)",            # Example: "Definition of apple"
+        r"what is the definition of (\w+)" # Example: "What is the definition of apple?"
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, query)
+        if match:
+            return match.group(1)  # Return the captured word
+    
+    # Fallback: Extract the last word in the query
+    words = re.findall(r"\b[a-zA-Z]+\b", query)  # Match only valid words
+    return words[-1] if words else None
+
+def process_dictionary_response_refined(data, word_limit=100):
+    """
+    Converts dictionary API response into a concise, speakable language format, ignoring unwanted characters.
+    
+    Args:
+        data (list): Parsed JSON response from the dictionary API.
+        word_limit (int): Maximum word count for the output.
+    
+    Returns:
+        str: A refined, concise, and speakable version of the dictionary entry.
+    """
+    try:
+        if not data or not isinstance(data, list):
+            return "The dictionary response is empty or invalid."
+        
+        # Extract the first entry
+        entry = data[0]
+        word = entry.get("word", "Unknown word")
+        phonetic = entry.get("phonetic", "No phonetic available")
+        phonetic = re.sub(r"[^a-zA-Z\s]", "", phonetic)  # Remove unwanted characters from phonetic
+        meanings = entry.get("meanings", [])
+        
+        # Create the speakable response
+        response = [f"The word is '{word}'. It is pronounced as '{phonetic}'."]
+        word_count = sum(len(sentence.split()) for sentence in response)
+
+        for meaning in meanings:
+            if word_count >= word_limit:
+                break
+            part_of_speech = meaning.get("partOfSpeech", "unknown")
+            definitions = meaning.get("definitions", [])
+            
+            for definition in definitions:
+                if word_count >= word_limit:
+                    break
+                definition_text = definition.get("definition", "No definition provided.")
+                example = definition.get("example", None)
+                
+                # Clean definition and example of unwanted characters
+                definition_text = re.sub(r"[^a-zA-Z0-9\s.,']", "", definition_text)
+                if example:
+                    example = re.sub(r"[^a-zA-Z0-9\s.,']", "", example)
+
+                response.append(f"As a {part_of_speech}, it means: {definition_text}.")
+                word_count += len(response[-1].split())
+                
+                if example and word_count < word_limit:
+                    response.append(f"For example: {example}.")
+                    word_count += len(response[-1].split())
+
+        # Combine and truncate if necessary
+        final_response = " ".join(response)
+        if len(final_response.split()) > word_limit:
+            final_response = " ".join(final_response.split()[:word_limit]) + "..."
+        
+        return final_response
+    
+    except Exception as e:
+        return f"An error occurred: {str(e)}"

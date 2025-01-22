@@ -53,12 +53,15 @@ def allCommands():
     elif "search" in query:
         from engine.features import search_google
         search_google(query)
-    elif "temperature" in query:
+    elif "temperature" or "weather" in query:
         from engine.features import weather
         weather(query)
     elif "news" in query:
         from engine.features import news
         news()
+    elif "meaning" in query:
+        from engine.features import dictionay_search
+        dictionay_search(query)
     else:
         from engine.features import chatBot
         response= chatBot(query)
