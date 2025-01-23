@@ -38,8 +38,11 @@ def TakeCommand():
 # if text:
 #     spaek(text)
 @eel.expose
-def allCommands():
-    query = TakeCommand()
+def allCommands(message=None):
+    if(message == None):
+        query = TakeCommand()
+    else:
+        query = message
 
     if "open" in query:
         from engine.features import openCommand
