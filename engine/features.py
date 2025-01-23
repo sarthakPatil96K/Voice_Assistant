@@ -7,7 +7,7 @@ from engine.config import Assistant_Name
 from engine.command import speak
 import eel
 import pywhatkit as kit
-
+import time
 import sqlite3
 from hugchat import hugchat
 conn = sqlite3.connect("Eleven.db")
@@ -144,30 +144,83 @@ def extract_google_term(command):
     fallback_match = re.search(fallback_pattern, command)
     return fallback_match.group(1) if fallback_match else None
 
- 
-# chatBot using open source library
+import time
+from hugchat import hugchat
+from hugchat.exceptions import ChatError
+
 def chatBot(query):
-    user_input = query.lower()
-    chatbot = hugchat.ChatBot(cookie_path="engine\cookies.jason")
-    id = chatbot.new_conversation()
-    chatbot.change_conversation(id)
-    response =  chatbot.chat(user_input)
-    print(response)
-    speak(response)
-    return response
+    try:
+        user_input = query.lower()
+        chatbot = hugchat.ChatBot(cookie_path="engine\cookies.json")
+        
+        # Start a new conversation and set it
+        conversation_id = chatbot.new_conversation()
+        chatbot.change_conversation(conversation_id)
+        
+        # Send the query to the chatbot
+        response = chatbot.chat(user_input)
+        
+        # Introduce a delay to respect rate limits
+        time.sleep(2)
+        
+        # Print and speak the response
+        print(response)
+        speak(response)
+        return response
+    except ChatError as e:
+        # Handle rate-limiting or other errors gracefully
+        print(f"ChatError: {e}")
+        response = "I'm experiencing some issues. Please try again later."
+        speak(response)
+        return response
+    except FileNotFoundError:
+        print("Cookie file not found. Ensure the path is correct.")
+        response = "Configuration error. Please check the setup."
+        speak(response)
+        return response
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        response = "An unexpected error occurred. Please try again."
+        speak(response)
+        return response
 
 # weather API
 def weather(query):
-    text = extract_city_from_query(query)
-    import requests,json
-    api_key = "e18c82c4cf1a4f6864b3bf11bd6e6121"
-    url = "https://api.openweathermap.org/data/2.5/weather?q="
-    cmpl_url = url + text+ "&appid=" +api_key
-    response = requests.get(cmpl_url)
-    response = response.json()
-    understandable_lang = format_weather_data(response)
-    speak(understandable_lang)
-    return response
+    import requests
+
+    api_key = "e18c82c4cf1a4f6864b3bf11bd6e6121"  # Replace with your valid API key
+    base_url = "http://api.openweathermap.org/data/2.5/weather?q="
+
+    try:
+        # Extract city name from query
+        city = query.replace("temperature in", "").strip()
+
+        if not city:
+            speak("Please specify a city for the weather.")
+            return
+
+        # Construct API URL
+        cmpl_url = base_url + city + "&appid=" + api_key + "&units=metric"
+
+        # Make the API call
+        response = requests.get(cmpl_url)
+        if response.status_code != 200:
+            speak("Unable to fetch weather data. Please try again.")
+            print(f"Weather API Error: {response.status_code}, {response.text}")
+            return
+
+        # Parse the response
+        weather_data = response.json()
+        if "main" in weather_data:
+            temp = weather_data["main"]["temp"]
+            condition = weather_data["weather"][0]["description"]
+            speak(f"The temperature in {city} is {temp} degrees Celsius with {condition}.")
+        else:
+            speak("Could not find weather details for the specified city.")
+    except Exception as e:
+        speak(f"An error occurred while fetching weather data: {str(e)}")
+        print(f"Weather Function Exception: {str(e)}")
+
 
 # extract city name
 def extract_city_from_query(query):
@@ -234,75 +287,59 @@ def format_news_for_voice_assistant(news_json):
     
     return speakable_text
 
-def dictionay_search(query):
-    """
-    Searches for a word in the dictionary API and speaks the response.
-    
-    Args:
-        query (str): The user's input query.
-    """
+def dictionary_search(query=None):
     import requests
-
-    # Extract the word to search
-    word = extract_word_from_query(query)
-    
-    if not word:
-        speak("I couldn't extract a word to search. Please try rephrasing your query.")
-        return
-    
+    word = extract_word_for_dictionary(query)
     url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
     response = requests.get(url)
     
     if response.status_code == 200:
         response_data = response.json()
-        refined_response = process_dictionary_response_refined(response_data)
-        speak(refined_response)
+        response = concise_dictionary_response(response_data)
+        speak(response)
+        return  response
     else:
-        speak(f"Error: Unable to fetch data for the word '{word}'. Status code: {response.status_code}")
+        print(f"Error: Unable to fetch data for the word '{word}'. Status code: {response.status_code}")
 
-
-def extract_word_from_query(query):
+def extract_word_for_dictionary(query):
     """
-    Extracts a word to search in the dictionary from a user's query.
-    
+    Extracts the word to search in a dictionary from the user's query.
+
     Args:
         query (str): The user's input query.
-    
+
     Returns:
         str: The extracted word or None if no word is found.
     """
-    import re
-
-    # Convert query to lowercase
-    query = query.lower()
-    
-    # Patterns for extracting the word
+    # Common patterns for dictionary queries
     patterns = [
-        r"what does (\w+) mean",           # Example: "What does apple mean?"
-        r"meaning of (\w+)",               # Example: "Meaning of apple"
-        r"definition of (\w+)",            # Example: "Definition of apple"
-        r"what is the definition of (\w+)" # Example: "What is the definition of apple?"
+        r"meaning of (\w+)",         # Example: "meaning of hero"
+        r"what does (\w+) mean",     # Example: "what does hero mean"
+        r"define (\w+)",             # Example: "define hero"
+        r"definition of (\w+)",      # Example: "definition of hero"
+        r"what is (\w+)",            # Example: "what is hero"
+        r"meaning (\w+)"             # Example: "meaning hero"
     ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, query)
-        if match:
-            return match.group(1)  # Return the captured word
-    
-    # Fallback: Extract the last word in the query
-    words = re.findall(r"\b[a-zA-Z]+\b", query)  # Match only valid words
-    return words[-1] if words else None
 
-def process_dictionary_response_refined(data, word_limit=100):
+    for pattern in patterns:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            return match.group(1)  # Return the matched word
+
+    # If no pattern matches, return None
+    return None
+
+
+def concise_dictionary_response(data, word_limit=100):
     """
-    Converts dictionary API response into a concise, speakable language format, ignoring unwanted characters.
+    Converts dictionary API response into a concise, speakable language format.
     
     Args:
         data (list): Parsed JSON response from the dictionary API.
         word_limit (int): Maximum word count for the output.
     
     Returns:
-        str: A refined, concise, and speakable version of the dictionary entry.
+        str: A concise and speakable version of the dictionary entry.
     """
     try:
         if not data or not isinstance(data, list):
@@ -312,7 +349,6 @@ def process_dictionary_response_refined(data, word_limit=100):
         entry = data[0]
         word = entry.get("word", "Unknown word")
         phonetic = entry.get("phonetic", "No phonetic available")
-        phonetic = re.sub(r"[^a-zA-Z\s]", "", phonetic)  # Remove unwanted characters from phonetic
         meanings = entry.get("meanings", [])
         
         # Create the speakable response
@@ -330,12 +366,6 @@ def process_dictionary_response_refined(data, word_limit=100):
                     break
                 definition_text = definition.get("definition", "No definition provided.")
                 example = definition.get("example", None)
-                
-                # Clean definition and example of unwanted characters
-                definition_text = re.sub(r"[^a-zA-Z0-9\s.,']", "", definition_text)
-                if example:
-                    example = re.sub(r"[^a-zA-Z0-9\s.,']", "", example)
-
                 response.append(f"As a {part_of_speech}, it means: {definition_text}.")
                 word_count += len(response[-1].split())
                 
