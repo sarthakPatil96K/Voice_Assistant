@@ -39,33 +39,47 @@ def TakeCommand():
 #     spaek(text)
 @eel.expose
 def allCommands(message=None):
-    if(message == None):
+    if message is None:
         query = TakeCommand()
     else:
         query = message
 
     if "open" in query:
         from engine.features import openCommand
-        openCommand(query)
+        eel.spawn(openCommand, query)  # Runs in a separate thread
     elif "play" in query and "youtube" in query:
         from engine.features import PlayYoutube
-        PlayYoutube(query)
+        eel.spawn(PlayYoutube, query)
     elif "search" in query and "wikipedia" in query:
         from engine.features import search_wikipedia
-        search_wikipedia(query)
+        eel.spawn(search_wikipedia, query)
     elif "search" in query:
         from engine.features import search_google
-        search_google(query)
-    elif "temperature" in query :
+        eel.spawn(search_google, query)
+    elif "temperature" in query:
         from engine.features import weather
-        weather(query)
+        eel.spawn(weather, query)
     elif "news" in query:
         from engine.features import news
-        news()
+        eel.spawn(news)
     elif "meaning" in query:
         from engine.features import dictionary_search
-        dictionary_search(query)
+        eel.spawn(dictionary_search, query)
+    elif "send message" in query or "call" in query or "video call" in query:
+            from engine.features import findContact, whatsApp
+            contact_no, name = findContact(query)
+             
+            if "send message" in query:
+                message = 'message'
+                speak("what message to send")
+                query = TakeCommand()
+                                        
+            elif "phone call" in query:
+                message = 'call'
+            else:
+                message = 'video call'
+                                        
+            whatsApp(contact_no, query, message, name)
     else:
         from engine.features import chatBot
-        chatBot(query)
-        
+        eel.spawn(chatBot, query)
