@@ -1,7 +1,11 @@
 import os
 import re
 from shlex import quote
+import struct
 import subprocess
+import sys
+import pvporcupine
+import pyaudio
 import pyautogui
 import wikipedia as wk
 import webbrowser
@@ -12,6 +16,7 @@ import eel
 import pywhatkit as kit
 import time
 import sqlite3
+import psutil
 from hugchat import hugchat
 conn = sqlite3.connect("Eleven.db")
 cursor = conn.cursor()
@@ -19,6 +24,7 @@ cursor = conn.cursor()
 # voice assistant opening sound function
 @eel.expose
 def playAssitantSound():
+    print("sound played")
     music_dir="www\\assets\\audio\mixkit-software-interface-back-2575.wav"
     playsound(music_dir)
 
@@ -151,6 +157,13 @@ import time
 from hugchat import hugchat
 from hugchat.exceptions import ChatError
 
+ 
+def sanitize_response(response):
+    """Ensures the response is a string and removes unwanted characters."""
+    if not isinstance(response, str):
+        response = str(response)  # Convert response to a string if it's not
+    return re.sub(r"[*\\/]", "", response)  # Remove *, \, /
+
 def chatBot(query):
     try:
         user_input = query.lower()
@@ -166,26 +179,32 @@ def chatBot(query):
         # Introduce a delay to respect rate limits
         time.sleep(2)
         
-        # Print and speak the response
-        print(response)
-        speak(response)
-        return response
+        # Sanitize the response before speaking
+        cleaned_response = sanitize_response(response)
+        
+        # Print and speak the sanitized response
+        print(cleaned_response)
+        speak(cleaned_response)
+        return cleaned_response
+
     except ChatError as e:
-        # Handle rate-limiting or other errors gracefully
         print(f"ChatError: {e}")
         response = "I'm experiencing some issues. Please try again later."
         speak(response)
         return response
+
     except FileNotFoundError:
         print("Cookie file not found. Ensure the path is correct.")
         response = "Configuration error. Please check the setup."
         speak(response)
         return response
+
     except Exception as e:
         print(f"Unexpected error: {e}")
         response = "An unexpected error occurred. Please try again."
         speak(response)
         return response
+
 
 # weather API
 def weather(query):
@@ -468,3 +487,116 @@ def whatsApp(mobile_no, message, flag, name):
         pyautogui.hotkey('enter')  # Press Enter to make the call
 
     speak(jarvis_message)
+
+@eel.expose
+def close_voice_assistant():
+    """Closes the Eel frontend and exits Python."""
+    farewell_message = "Goodbye! Shutting down the assistant."
+    print(farewell_message)
+    speak(farewell_message)
+
+    # Call JavaScript function to close the frontend
+    eel.closeWindow()  
+
+    # Exit the Python backend after a short delay
+    sys.exit()
+
+# function to close application
+import psutil
+import os
+import eel
+
+def close_app(app_name):
+    app_name = app_name.lower()  # Make the app name case-insensitive
+    closed_apps = []
+
+    # Iterate through all running processes to find WhatsApp or related app
+    for process in psutil.process_iter(['pid', 'name']):
+        try:
+            if app_name in process.info['name'].lower():  # Check if app name matches
+                print(f"Found {process.info['name']} (PID: {process.info['pid']})")
+                process.kill()  # Kill the process
+                closed_apps.append(process.info['name'])
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
+    # Provide feedback to the user on whether any apps were closed
+    if closed_apps:
+        message = f"Closed the app {app_name}."
+        speak(message)
+        return message
+    else:
+        message = f"No running instances of {app_name} found."
+        speak(message)
+        return message
+
+
+def extract_app_name(command):
+    """
+    Extracts the application name from the voice command.
+    
+    Example voice commands:
+    - "close chrome"
+    - "open notepad"
+    
+    Returns:
+    - The extracted application name (e.g., 'chrome', 'notepad')
+    """
+    # List of common keywords (close, open, etc.)
+    action_keywords = ['close', 'open', 'launch', 'start', 'kill', 'stop']
+    
+    # Remove the action keyword from the command
+    command = command.lower()
+    for keyword in action_keywords:
+        if keyword in command:
+            command = command.replace(keyword, '').strip()
+            break
+
+    # We can also handle edge cases, such as if there is more than one word.
+    # Clean the string by removing extra spaces and handling the app name
+    app_name = command.strip()
+    
+    # Optionally, validate app name (if needed)
+    # You can use a regex or predefined app list to match common app names
+    app_name = re.sub(r'[^a-zA-Z0-9\s]', '', app_name)  # Remove non-alphanumeric characters
+    
+    return app_name
+
+ 
+def hotword():
+    porcupine=None
+    paud=None
+    audio_stream=None
+    try:
+       
+        # pre trained keywords    
+        porcupine=pvporcupine.create(keywords=["jarvis","alexa"]) 
+        paud=pyaudio.PyAudio()
+        audio_stream=paud.open(rate=porcupine.sample_rate,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=porcupine.frame_length)
+        
+        # loop for streaming
+        while True:
+            keyword=audio_stream.read(porcupine.frame_length)
+            keyword=struct.unpack_from("h"*porcupine.frame_length,keyword)
+
+            # processing keyword comes from mic 
+            keyword_index=porcupine.process(keyword)
+
+            # checking first keyword detetcted for not
+            if keyword_index>=0:
+                print("hotword detected")
+
+                # pressing shorcut key win+j
+                import pyautogui as autogui
+                autogui.keyDown("win")
+                autogui.press("j")
+                time.sleep(2)
+                autogui.keyUp("win")
+                
+    except:
+        if porcupine is not None:
+            porcupine.delete()
+        if audio_stream is not None:
+            audio_stream.close()
+        if paud is not None:
+            paud.terminate()

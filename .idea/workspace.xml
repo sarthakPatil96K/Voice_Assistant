@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="c6de03a6-a71e-4ebc-b77f-237da5f6e05e" name="Changes" comment="" />
+    <list default="true" id="c6de03a6-a71e-4ebc-b77f-237da5f6e05e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/VoiceAssistant.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/VoiceAssistant.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Eleven.db" beforeDir="false" afterPath="$PROJECT_DIR$/Eleven.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/engine/command.py" beforeDir="false" afterPath="$PROJECT_DIR$/engine/command.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/engine/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/engine/db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/engine/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/engine/features.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/www/controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/www/controller.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/www/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/www/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/www/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/www/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/www/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/www/style.css" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,10 +24,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 1
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="2sLQi7rirL3CKr3gGCiy9Bdj1yo" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -24,7 +38,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/sarthak patil/Desktop/jarvis-main"
+    "last_opened_file_path": "C:/Users/sarthak patil/Desktop/VoiceAssistant"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />

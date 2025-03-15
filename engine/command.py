@@ -8,8 +8,9 @@ def speak(text):
     voices = engine.getProperty('voices')
     engine.setProperty('rate', 175)
     engine.setProperty('voice', voices[1].id)
-    eel.DisplayMessage(f"User said:{text}")
+    eel.DisplayMessage(f"{text}")
     engine.say(text)
+    eel.receiverText(text)
     engine.runAndWait()
     eel.ShowHood()
 
@@ -39,47 +40,67 @@ def TakeCommand():
 #     spaek(text)
 @eel.expose
 def allCommands(message=None):
-    if message is None:
-        query = TakeCommand()
-    else:
-        query = message
+    try:
+        if message is None:
+            query = TakeCommand()
+            eel.senderText(query)
+        else:
+            query = message
+            eel.senderText(message)
 
-    if "open" in query:
-        from engine.features import openCommand
-        eel.spawn(openCommand, query)  # Runs in a separate thread
-    elif "play" in query and "youtube" in query:
-        from engine.features import PlayYoutube
-        eel.spawn(PlayYoutube, query)
-    elif "search" in query and "wikipedia" in query:
-        from engine.features import search_wikipedia
-        eel.spawn(search_wikipedia, query)
-    elif "search" in query:
-        from engine.features import search_google
-        eel.spawn(search_google, query)
-    elif "temperature" in query:
-        from engine.features import weather
-        eel.spawn(weather, query)
-    elif "news" in query:
-        from engine.features import news
-        eel.spawn(news)
-    elif "meaning" in query:
-        from engine.features import dictionary_search
-        eel.spawn(dictionary_search, query)
-    elif "send message" in query or "call" in query or "video call" in query:
-            from engine.features import findContact, whatsApp
-            contact_no, name = findContact(query)
-             
-            if "send message" in query:
-                message = 'message'
-                speak("what message to send")
-                query = TakeCommand()
-                                        
-            elif "phone call" in query:
-                message = 'call'
-            else:
-                message = 'video call'
-                                        
-            whatsApp(contact_no, query, message, name)
-    else:
-        from engine.features import chatBot
-        eel.spawn(chatBot, query)
+
+        if "open" in query:
+            from engine.features import openCommand
+            eel.spawn(openCommand, query)  # Runs in a separate thread
+        elif "play" in query and "youtube" in query:
+            from engine.features import PlayYoutube
+            eel.spawn(PlayYoutube, query)
+        elif "search" in query and "wikipedia" in query:
+            from engine.features import search_wikipedia
+            eel.spawn(search_wikipedia, query)
+        elif "search" in query:
+            from engine.features import search_google
+            eel.spawn(search_google, query)
+        elif "temperature" in query:
+            from engine.features import weather
+            eel.spawn(weather, query)
+        elif "news" in query:
+            from engine.features import news
+            eel.spawn(news)
+        elif "meaning" in query:
+            from engine.features import dictionary_search
+            eel.spawn(dictionary_search, query)
+        elif "send message" in query or "phone call" in query or "video call" in query:
+                from engine.features import findContact, whatsApp
+                contact_no, name = findContact(query)
+                if(contact_no == 0):
+                    speak("Contact does not exist please add the contact number first!")
+                else:
+                
+                    if "send message" in query and contact_no !=0:
+                        message = 'message'
+                        speak("what message to send")
+                        query = TakeCommand()
+                                                
+                    elif "phone call" in query:
+                        message = 'call'
+                    else:
+                        message = 'video call'
+                                                
+                    whatsApp(contact_no, query, message, name)
+        elif "add" in query:
+            from engine.db import add_contact_from_query
+            add_contact_from_query(query)
+        elif "close" in query or "application" in query:
+            from engine.features import close_app, extract_app_name
+            app = extract_app_name(query)
+            if app != None:
+                close_app(app)
+        elif "shutdown" in query or "exit" in query:
+            from engine.features import close_voice_assistant
+            close_voice_assistant()
+        else:
+            from engine.features import chatBot
+            eel.spawn(chatBot, query)
+    except:
+        print("Error")
