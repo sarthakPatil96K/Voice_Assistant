@@ -115,8 +115,8 @@ def search_google(query):
     search_term = extract_google_term(query)
     
     if search_term:
-        print(f"Searching Google for: {search_term}")
-        speak(f"Searching Google for {search_term}")
+        print(f"Searching on Google for: {search_term}")
+        speak(f"Searching on Google for {search_term}")
         kit.search(search_term)  # This will open the search in a browser
     else:
         speak("I couldn't determine what to search for. Please try again with a clearer query.")
@@ -352,7 +352,7 @@ def extract_word_for_dictionary(query):
     return None
 
 
-def concise_dictionary_response(data, word_limit=100):
+def concise_dictionary_response(data, word_limit=50):
     """
     Converts dictionary API response into a concise, speakable language format.
     
@@ -439,54 +439,81 @@ def findContact(query):
         speak('not exist in contacts')
         return 0, 0
 
+import pyautogui
+import subprocess
+import time
+import threading
+import urllib.parse  # For URL encoding
+
+def speak_async(message):
+    threading.Thread(target=speak, args=(message,)).start()
+
 def whatsApp(mobile_no, message, flag, name):
-    if flag == 'message':
-        target_tab = 12
-        jarvis_message = f"Message sent successfully to {name}"
+    try:
+        if flag == 'message':
+            # URL encode the message to handle special characters
+            encoded_message = urllib.parse.quote(message)
+            
+            # Use the WhatsApp desktop app URL scheme with the encoded message
+            whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
+            
+            # Open WhatsApp Desktop
+            subprocess.run(f'start "" "{whatsapp_url}"', shell=True)
+            time.sleep(10)  # Increased wait time to ensure WhatsApp is fully loaded
+            pyautogui.hotkey('enter')
+            jarvis_message = f"Message sent successfully to {name}"
 
-    elif flag == 'call':
-        target_tab = 7
-        message = ''
-        jarvis_message = f"Calling {name}"
-        call_type = 'voice'
+        else:  # For voice and video calls
+            whatsapp_url = f"whatsapp://send?phone={mobile_no}"
+            
+            # Launch WhatsApp Desktop App
+            subprocess.run(f'start "" "{whatsapp_url}"', shell=True)
+            time.sleep(7)
 
-    else:
-        target_tab = 6
-        message = ''
-        jarvis_message = f"Starting video call with {name}"
-        call_type = 'video'
+            # Maximize window
+            pyautogui.hotkey('win', 'up')
+            time.sleep(1)
 
-    # Encode the message for URL
-    encoded_message = quote(message)
+            if flag == 'call':
+                jarvis_message = f"Calling {name}"
 
-    # Construct the WhatsApp URL for message sending
-    whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
+                # Locate call button or use fallback navigation
+                call_button = pyautogui.locateOnScreen(r"www/assets/IMG/voice_call.png", confidence=0.8)
 
-    # Open WhatsApp using a system command
-    full_command = f'start "" "{whatsapp_url}"'
-    subprocess.run(full_command, shell=True)
-    
-    time.sleep(5)  # Wait for WhatsApp to open
+                if call_button:
+                    pyautogui.click(call_button)
+                else:
+                    print("Voice call button not found, using tab navigation.")
+                    
+                    for _ in range(5):   # Adjusted tab count
+                        pyautogui.hotkey('tab')
+                        time.sleep(0.3)
 
-    # Find the contact search bar and press Enter
-    pyautogui.hotkey('ctrl', 'f')
-    time.sleep(1)
-    
-    # Navigate to the call button
-    for _ in range(1, target_tab):
-        pyautogui.hotkey('tab')
-    
-    pyautogui.hotkey('enter')
-    time.sleep(2)
+                    pyautogui.hotkey('enter')
 
-    # **Fix for Voice Call Not Working**
-    if flag == 'call':  
-        time.sleep(1)  # Wait to make sure the call menu is open
-        pyautogui.hotkey('tab')  # Move to the voice call option
-        time.sleep(1)
-        pyautogui.hotkey('enter')  # Press Enter to make the call
+            elif flag == 'video':
+                jarvis_message = f"Starting video call with {name}"
+                video_button = pyautogui.locateOnScreen(r"www/assets/IMG/video_call.png", confidence=0.8)
 
-    speak(jarvis_message)
+                if video_button:
+                    pyautogui.click(video_button)
+                else:
+                    print("Video call button not found, using tab navigation.")
+                    
+                    for _ in range(4):   # Adjusted tab count
+                        pyautogui.hotkey('tab')
+                        time.sleep(0.3)
+
+                    pyautogui.hotkey('enter')
+
+        # Speak confirmation message
+        speak_async(jarvis_message)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        speak_async("There was an issue with the WhatsApp operation.")
+
+
 
 @eel.expose
 def close_voice_assistant():
@@ -600,3 +627,143 @@ def hotword():
             audio_stream.close()
         if paud is not None:
             paud.terminate()
+
+# setting alarm
+import datetime
+import threading
+import os
+import platform
+import time
+
+def play_alarm():
+    """Plays the alarm sound based on the OS."""
+    print("⏰ Alarm ringing!")
+    
+    if platform.system() == "Windows":
+        os.system("start ms-winsoundevent:Notification.Default")
+    elif platform.system() == "Darwin":  # macOS
+        os.system("say 'Alarm ringing!'")
+    else:  # Linux
+        os.system("paplay /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga")
+
+def play_alarm():
+    """Plays an alarm sound."""
+    try:
+        # Use a built-in sound file or specify your own
+        sound_file = "www\\assets\\audio\\alarm_sound.mp3"  # Replace with a valid sound file
+        playsound(sound_file)
+    except Exception as e:
+        print(f"Error playing sound: {e}")
+
+def set_alarm(alarm_time, message="Alarm ringing!"):
+    """
+    Sets an alarm at the specified time in a separate thread.
+    
+    Parameters:
+    - alarm_time (str): Time in HH:MM format (24-hour).
+    - message (str): Message to display when the alarm rings.
+    """
+    def alarm_thread():
+        try:
+            alarm_hour, alarm_minute = map(int, alarm_time.split(":"))
+            now = datetime.datetime.now()
+            alarm_datetime = now.replace(hour=alarm_hour, minute=alarm_minute, second=0, microsecond=0)
+
+            # Handle next-day alarm
+            if alarm_datetime < now:
+                alarm_datetime += datetime.timedelta(days=1)
+
+            # Sleep until the alarm time
+            while datetime.datetime.now() < alarm_datetime:
+                time.sleep(1)
+
+            # Trigger the alarm
+            print(message)
+            speak(message)
+            play_alarm()
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+    # Start the alarm in a separate thread
+    speak("Your alarm has been set!!")
+    threading.Thread(target=alarm_thread).start()
+    print(f"✅ Alarm set for {alarm_time}. Running in background...")
+
+
+import re
+
+def extract_time_and_message(query):
+    """
+    Extracts time and generates a contextual message from the user's query,
+    removing redundant words.
+    
+    Parameters:
+    - query (str): User's voice query
+    
+    Returns:
+    - tuple: (time in HH:MM format, contextual message) or (None, query) if no time is found
+    """
+    
+    # Remove redundant words
+    redundant_words = [
+        "set an alarm at", "set alarm at", "set reminder at", "remind me", 
+        "wake me up", "notify me", "alert me"
+    ]
+    
+    # Clean up the query
+    for word in redundant_words:
+        query = re.sub(rf'\b{word}\b', '', query, flags=re.IGNORECASE).strip()
+
+    # Regex patterns for time formats
+    patterns = [
+        r'(\d{1,2}):(\d{2})\s?(AM|PM|am|pm)?',         # 12-hour with AM/PM
+        r'(\d{1,2})\s?(AM|PM|am|pm)',                   # 12-hour without minutes
+        r'(\d{1,2}):(\d{2})'                            # 24-hour format
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, query)
+        if match:
+            # Extract time components
+            if len(match.groups()) == 3:  # 12-hour with AM/PM
+                hour, minute, meridian = match.groups()
+                hour, minute = int(hour), int(minute)
+
+                if meridian:
+                    if meridian.lower() == "pm" and hour != 12:
+                        hour += 12
+                    elif meridian.lower() == "am" and hour == 12:
+                        hour = 0
+            elif len(match.groups()) == 2 and ":" not in match.group(0):  # 12-hour without minutes
+                hour, meridian = match.groups()
+                hour = int(hour)
+                minute = 0
+                if meridian.lower() == "pm" and hour != 12:
+                    hour += 12
+                elif meridian.lower() == "am" and hour == 12:
+                    hour = 0
+            else:  # 24-hour format
+                hour, minute = map(int, match.groups()[:2])
+
+            # Format the time in HH:MM
+            time_str = f"{hour:02d}:{minute:02d}"
+
+            # Extract the message by removing the time from the query
+            message = re.sub(pattern, '', query).strip()
+
+            # Generate contextual message
+            if message:
+                if any(word in message.lower() for word in ["meeting", "event", "appointment","lecture"]):
+                    contextual_msg = f"Time {message}"
+                elif any(word in message.lower() for word in ["call", "remind", "notify"]):
+                    contextual_msg = f"Reminding you to {message}"
+                else:
+                    contextual_msg = message
+            else:
+                contextual_msg = "Alarm ringing!"
+
+            return time_str, contextual_msg
+
+    # If no time is found, return the full query as the message
+    return None, query

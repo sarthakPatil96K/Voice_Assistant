@@ -99,6 +99,13 @@ def allCommands(message=None):
         elif "shutdown" in query or "exit" in query:
             from engine.features import close_voice_assistant
             close_voice_assistant()
+        elif "alarm" in query or "set" in query or "reminder" in query:
+            from engine.features import set_alarm,extract_time_and_message
+            t,msg = extract_time_and_message(query)
+            if query is not None:
+                set_alarm(t,msg)
+            else:
+                speak("Error occured")
         else:
             from engine.features import chatBot
             eel.spawn(chatBot, query)
