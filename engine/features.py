@@ -459,7 +459,7 @@ def whatsApp(mobile_no, message, flag, name):
             
             # Open WhatsApp Desktop
             subprocess.run(f'start "" "{whatsapp_url}"', shell=True)
-            time.sleep(10)  # Increased wait time to ensure WhatsApp is fully loaded
+            time.sleep(5)  # Increased wait time to ensure WhatsApp is fully loaded
             pyautogui.hotkey('enter')
             jarvis_message = f"Message sent successfully to {name}"
 
@@ -634,17 +634,6 @@ import threading
 import os
 import platform
 import time
-
-def play_alarm():
-    """Plays the alarm sound based on the OS."""
-    print("⏰ Alarm ringing!")
-    
-    if platform.system() == "Windows":
-        os.system("start ms-winsoundevent:Notification.Default")
-    elif platform.system() == "Darwin":  # macOS
-        os.system("say 'Alarm ringing!'")
-    else:  # Linux
-        os.system("paplay /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga")
 
 def play_alarm():
     """Plays an alarm sound."""

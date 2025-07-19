@@ -48,7 +48,6 @@ def allCommands(message=None):
             query = message
             eel.senderText(message)
 
-
         if "open" in query:
             from engine.features import openCommand
             eel.spawn(openCommand, query)  # Runs in a separate thread
